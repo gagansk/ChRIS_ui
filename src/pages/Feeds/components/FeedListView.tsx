@@ -3,7 +3,9 @@ import { connect } from "react-redux";
 import { Dispatch } from "redux";
 import { RouteComponentProps, Link } from "react-router-dom";
 import Moment from "react-moment";
-import { PageSection } from "@patternfly/react-core";
+import { PageSection,
+         Button
+       } from "@patternfly/react-core";
 import { ApplicationState } from "../../../store/root/applicationState";
 import { setSidebarActive } from "../../../store/ui/actions";
 import { getAllFeedsRequest } from "../../../store/feed/actions";
@@ -14,6 +16,7 @@ import { LinkIcon } from "@patternfly/react-icons";
 import { DataTableToolbar } from "../../../components/index";
 import _ from "lodash";
 import debounce from "lodash/debounce";
+import "./FeedListView.scss";
 interface IPropsFromDispatch {
   setSidebarActive: typeof setSidebarActive;
   getAllFeedsRequest: typeof getAllFeedsRequest;
@@ -44,6 +47,7 @@ class AllFeedsPage extends React.Component<AllProps> {
       <PageSection>
         {!!feeds && (
           <div className="white-bg pf-u-p-lg">
+            <Button className="create-feed-button">Create New Feed</Button>
             <DataTableToolbar onSearch={this.onSearch} label="name" />
             <Table
               aria-label="Data table"
