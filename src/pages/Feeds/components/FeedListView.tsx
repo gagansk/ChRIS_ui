@@ -25,6 +25,14 @@ interface IPropsFromDispatch {
 type AllProps = IFeedState & IPropsFromDispatch & RouteComponentProps;
 
 class AllFeedsPage extends React.Component<AllProps> {
+  constructor(props: AllProps) {
+    super(props);
+
+    this.state = {
+      showFeedConfirmation: false,
+    };
+    this.showFeedModal = this.showFeedModal.bind(this);
+  }
   componentDidMount() {
     const { setSidebarActive, getAllFeedsRequest } = this.props;
     document.title = "All Feeds - ChRIS UI site";
@@ -35,6 +43,10 @@ class AllFeedsPage extends React.Component<AllProps> {
     getAllFeedsRequest();
   }
 
+  showFeedModal() {
+    console.log('here');
+  }
+
   // Description: Debounce the search call
   // recall with search param by name
   onSearch = debounce((term: string) => {
@@ -43,11 +55,14 @@ class AllFeedsPage extends React.Component<AllProps> {
 
   render() {
     const { feeds } = this.props;
+    console.log('In render');
     return (
       <PageSection>
         {!!feeds && (
           <div className="white-bg pf-u-p-lg">
-            <Button className="create-feed-button">Create New Feed</Button>
+            <Button className="create-feed-button" onClick={this.showFeedModal}>
+              Create New Feed
+            </Button>
             <DataTableToolbar onSearch={this.onSearch} label="name" />
             <Table
               aria-label="Data table"
