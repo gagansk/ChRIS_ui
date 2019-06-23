@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { Dispatch } from "redux";
 import { RouteComponentProps, Link } from "react-router-dom";
 import Moment from "react-moment";
-import { PageSection } from "@patternfly/react-core";
+import { PageSection, Button, Wizard } from "@patternfly/react-core";
 import { ApplicationState } from "../../../store/root/applicationState";
 import { setSidebarActive } from "../../../store/ui/actions";
 import { getAllFeedsRequest } from "../../../store/feed/actions";
@@ -14,14 +14,26 @@ import { LinkIcon } from "@patternfly/react-icons";
 import { DataTableToolbar } from "../../../components/index";
 import _ from "lodash";
 import debounce from "lodash/debounce";
+import "./FeedListView.scss";
 interface IPropsFromDispatch {
   setSidebarActive: typeof setSidebarActive;
   getAllFeedsRequest: typeof getAllFeedsRequest;
 }
 
+interface ComponentState {
+    isOpen: boolean;
+}
+
 type AllProps = IFeedState & IPropsFromDispatch & RouteComponentProps;
 
-class AllFeedsPage extends React.Component<AllProps> {
+class AllFeedsPage extends React.Component<AllProps, ComponentState> {
+  constructor(props: AllProps) {
+    super(props);
+    this.state = {
+      isOpen: false
+    };
+    this.toggleOpen = this.toggleOpen.bind(this);
+  }
   componentDidMount() {
     const { setSidebarActive, getAllFeedsRequest } = this.props;
     document.title = "All Feeds - ChRIS UI site";
@@ -38,12 +50,39 @@ class AllFeedsPage extends React.Component<AllProps> {
     this.props.getAllFeedsRequest(term);
   }, 500);
 
+  toggleOpen() {
+    this.setState({
+      isOpen: !this.state.isOpen
+    });
+  }
+
   render() {
     const { feeds } = this.props;
+    const { isOpen } = this.state;
+
+    const steps = [
+      { name: 'Step 1', component: <p>Step 1</p> },
+      { name: 'Step 2', component: <p>Step 2</p> },
+      { name: 'Step 3', component: <p>Step 3</p> },
+      { name: 'Step 4', component: <p>Step 4</p> },
+      { name: 'Review', component: <p>Review Step</p>, nextButtonText: 'Finish' }
+    ];
     return (
       <PageSection>
         {!!feeds && (
           <div className="white-bg pf-u-p-lg">
+            <Button className="create-feed-button" variant="primary" onClick={this.toggleOpen}>
+              Create a Feed
+            </Button>
+            {isOpen && (
+              <Wizard
+                isOpen={isOpen}
+                onClose={this.toggleOpen}
+                title="Simple Wizard"
+                description="Simple Wizard Description"
+                steps={steps}
+              />
+            )}
             <DataTableToolbar onSearch={this.onSearch} label="name" />
             <Table
               aria-label="Data table"
