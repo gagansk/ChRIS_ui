@@ -3,7 +3,8 @@ import { connect } from "react-redux";
 import { Dispatch } from "redux";
 import { RouteComponentProps, Link } from "react-router-dom";
 import Moment from "react-moment";
-import { PageSection, Button, Wizard } from "@patternfly/react-core";
+import { PageSection, Button, Wizard, Form,
+          FormGroup, TextInput } from "@patternfly/react-core";
 import { ApplicationState } from "../../../store/root/applicationState";
 import { setSidebarActive } from "../../../store/ui/actions";
 import { getAllFeedsRequest } from "../../../store/feed/actions";
@@ -14,6 +15,7 @@ import { LinkIcon } from "@patternfly/react-icons";
 import { DataTableToolbar } from "../../../components/index";
 import _ from "lodash";
 import debounce from "lodash/debounce";
+import SampleForm from "./SampleForm";
 import "./FeedListView.scss";
 interface IPropsFromDispatch {
   setSidebarActive: typeof setSidebarActive;
@@ -22,6 +24,10 @@ interface IPropsFromDispatch {
 
 interface ComponentState {
     isOpen: boolean;
+    isFormValid: boolean;
+    formValue: string;
+    allStepsValid: boolean;
+    stepIdReached: number;
 }
 
 type AllProps = IFeedState & IPropsFromDispatch & RouteComponentProps;
@@ -30,10 +36,67 @@ class AllFeedsPage extends React.Component<AllProps, ComponentState> {
   constructor(props: AllProps) {
     super(props);
     this.state = {
-      isOpen: false
+      isOpen: false,
+      isFormValid: false,
+      formValue: 'Thirty',
+      allStepsValid: false,
+      stepIdReached: 1
     };
+
     this.toggleOpen = this.toggleOpen.bind(this);
+    this.onFormChange = this.onFormChange.bind(this);
+    this.areAllStepsValid = this.areAllStepsValid.bind(this);
+    this.onNext = this.onNext.bind(this);
+    this.onBack = this.onBack.bind(this);
+    this.onGoToStep = this.onGoToStep.bind(this);
+    this.onSave = this.onSave.bind(this);
   }
+
+  toggleOpen() {
+    this.setState(({ isOpen }) => ({
+      isOpen: !isOpen
+    }));
+  }
+
+  onFormChange(isValid: any, value: any) {
+    this.setState(
+      {
+        isFormValid: isValid,
+        formValue: value
+      });
+      this.areAllStepsValid();
+  }
+
+  areAllStepsValid() {
+    this.setState({
+      allStepsValid: this.state.isFormValid
+    });
+  }
+
+  onNext( { id, name }: any, { prevId, prevName }: any ) {
+    console.log(`current id: ${id}, current name: ${name}, previous id: ${prevId}, previous name: ${prevName}`);
+    this.setState({
+      stepIdReached: this.state.stepIdReached < id ? id : this.state.stepIdReached
+    });
+    this.areAllStepsValid();
+  }
+
+  onBack( { id, name }: any, { prevId, prevName }: any ) {
+    console.log(`current id: ${id}, current name: ${name}, previous id: ${prevId}, previous name: ${prevName}`);
+    this.areAllStepsValid();
+  }
+
+  onGoToStep( { id, name }:any, { prevId, prevName }:any ) {
+    console.log(`current id: ${id}, current name: ${name}, previous id: ${prevId}, previous name: ${prevName}`);
+  }
+
+  onSave() {
+    console.log('Saved and closed the wizard');
+    this.setState({
+      isOpen: false
+    });
+  }
+
   componentDidMount() {
     const { setSidebarActive, getAllFeedsRequest } = this.props;
     document.title = "All Feeds - ChRIS UI site";
@@ -50,37 +113,49 @@ class AllFeedsPage extends React.Component<AllProps, ComponentState> {
     this.props.getAllFeedsRequest(term);
   }, 500);
 
-  toggleOpen() {
-    this.setState({
-      isOpen: !this.state.isOpen
-    });
-  }
 
   render() {
     const { feeds } = this.props;
-    const { isOpen } = this.state;
-
+    const { isOpen, isFormValid, formValue, allStepsValid, stepIdReached } = this.state;
     const steps = [
-      { name: 'Step 1', component: <p>Step 1</p> },
-      { name: 'Step 2', component: <p>Step 2</p> },
-      { name: 'Step 3', component: <p>Step 3</p> },
-      { name: 'Step 4', component: <p>Step 4</p> },
-      { name: 'Review', component: <p>Review Step</p>, nextButtonText: 'Finish' }
+      { id: 1, name: 'Information', component: <p>Step 1</p> },
+      {
+        name: 'Configuration',
+        steps: [
+          {
+            id: 2,
+            name: 'Substep A with validation',
+            component: (
+              <SampleForm formValue={formValue} isFormValid={isFormValid} onChange={this.onFormChange} />
+            ),
+            enableNext: isFormValid,
+            canJumpTo: stepIdReached >= 2
+          },
+          { id: 3, name: 'Substep B', component: <p>Substep B</p>, canJumpTo: stepIdReached >= 3 }
+        ]
+      },
+      { id: 4, name: 'Additional', component: <p>Step 3</p>, enableNext: allStepsValid, canJumpTo: stepIdReached >= 4 },
+      { id: 5, name: 'Review', component: <p>Step 4</p>, nextButtonText: 'Close', canJumpTo: stepIdReached >= 5 }
     ];
+
     return (
       <PageSection>
         {!!feeds && (
           <div className="white-bg pf-u-p-lg">
-            <Button className="create-feed-button" variant="primary" onClick={this.toggleOpen}>
-              Create a Feed
+            <Button variant="primary" onClick={this.toggleOpen}>
+              Show Wizard
             </Button>
             {isOpen && (
               <Wizard
                 isOpen={isOpen}
+                title="Validation Wizard"
+                description="Validation Wizard Description"
                 onClose={this.toggleOpen}
-                title="Simple Wizard"
-                description="Simple Wizard Description"
+                onSave={this.onSave}
                 steps={steps}
+                onNext={this.onNext}
+                onBack={this.onBack}
+                onGoToStep={this.onGoToStep}
               />
             )}
             <DataTableToolbar onSearch={this.onSearch} label="name" />
